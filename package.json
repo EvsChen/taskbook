@@ -47,6 +47,7 @@
     "chalk": "^2.4.1",
     "clipboardy": "^1.2.3",
     "meow": "^5.0.0",
+    "prompts": "^2.0.4",
     "signale": "1.4.0",
     "update-notifier": "^2.5.0"
   },

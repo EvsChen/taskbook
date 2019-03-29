@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 'use strict';
 const taskbook = require('./src/taskbook');
+const prompts = require('prompts');
 
-const taskbookCLI = (input, flags) => {
+const taskbookCLI = async (input, flags) => {
   if (flags.archive) {
     return taskbook.displayArchive();
   }
@@ -69,8 +70,23 @@ const taskbookCLI = (input, flags) => {
     return taskbook.clear();
   }
 
-  taskbook.displayByBoard();
-  return taskbook.displayStats();
+  let response = '';
+
+  while (true) {
+    process.stdout.write('\x1Bc');
+    taskbook.displayByBoard();
+    taskbook.displayStats();
+    const res = await prompts({
+      type: 'text',
+      name: 'prop',
+      message: 'What is the meaning of life?'
+    });
+    response = res.prop;
+    if (response === 'exit') {
+      break;
+    }
+    taskbookCLI(response.split(' '), { task: true });
+  }
 };
 
 module.exports = taskbookCLI;
