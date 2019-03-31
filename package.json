@@ -46,6 +46,7 @@
   "dependencies": {
     "chalk": "^2.4.1",
     "clipboardy": "^1.2.3",
+    "googleapis": "27",
     "meow": "^5.0.0",
     "prompts": "^2.0.4",
     "signale": "1.4.0",
