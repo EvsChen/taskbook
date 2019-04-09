@@ -79,6 +79,8 @@ const flags = {
   }
 };
 
+const flagKeys = Object.keys(flags);
+
 const taskbookCLI = async () => {
   let response = '';
   let flags = {};
@@ -91,9 +93,13 @@ const taskbookCLI = async () => {
       taskbook.displayStats();
     }
     const res = await prompts({
-      type: 'text',
+      type: 'autocomplete',
       name: 'prop',
-      message: 'Input command'
+      message: 'Input command',
+      choices: flagKeys.map(key => ({ title: key })),
+      onRender: () => {
+        console.log(this);
+      }
     });
     response = res.prop;
     if (response === 'exit') break;
