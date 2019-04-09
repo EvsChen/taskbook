@@ -394,6 +394,22 @@ class Taskbook {
     render.displayByDate(this._groupByDate(this._archive, this._getDates(this._archive)));
   }
 
+  displaySmartList() {
+    // Only show task
+    const sortByDate = Object.values(this._data)
+      .filter(item => item._isTask && !item.isComplete);
+    sortByDate.sort((a, b) => {
+      if (a.priority > 1 || b.priority > 1) {
+        if (a.priority > 1 && b.priority > 1) {
+          return b.priority - a.priority;
+        }
+        return a.priority > 1 ? -1 : 1;
+      }
+      return a._date - b._date
+    });
+    render.display(sortByDate);
+  }
+
   displayByBoard() {
     render.displayByBoard(this._groupByBoard());
   }

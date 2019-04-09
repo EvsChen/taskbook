@@ -72,12 +72,55 @@ const flags = {
     type: 'boolean',
     alias: 'm'
   },
+  smartlist: true,
+  sl: true,
   clear: {
     type: 'boolean'
   }
 };
 
-const taskbookCLI = async (input, flags) => {
+const taskbookCLI = async () => {
+  let response = '';
+  let flags = {};
+  let input = "";
+  process.stdout.write('\x1Bc');
+
+  while (true) {
+    if (!isRenderCommand(flags)) {
+      taskbook.displayByBoard();
+      taskbook.displayStats();
+    }
+    const res = await prompts({
+      type: 'text',
+      name: 'prop',
+      message: 'Input command'
+    });
+    response = res.prop;
+    if (response === 'exit') break;
+    input = parseInput(response.split(' ')).input;
+    flags = parseInput(response.split(' ')).flags;
+    process.stdout.write('\x1Bc');
+    executeCommand(input, flags);
+  }
+};
+
+function isRenderCommand(flags) {
+  return flags && (flags.timeline || flags.smartlist || flags.sl);
+}
+
+function parseInput(inputArr) {
+  if (flags[inputArr[0]]) {
+    return { input: inputArr.slice(1), flags: { [inputArr[0]]: true }};
+  }
+  return { input: inputArr, flags: {} };
+}
+
+function executeCommand(input, flags) {
+  if (flags.smartlist || flags.sl) {
+    taskbook.displaySmartList();
+    return taskbook.displayStats();
+  }
+
   if (flags.archive) {
     return taskbook.displayArchive();
   }
@@ -143,31 +186,6 @@ const taskbookCLI = async (input, flags) => {
   if (flags.clear) {
     return taskbook.clear();
   }
-
-  let response = '';
-  process.stdout.write('\x1Bc');
-
-  while (true) {
-    taskbook.displayByBoard();
-    taskbook.displayStats();
-    const res = await prompts({
-      type: 'text',
-      name: 'prop',
-      message: 'Input command'
-    });
-    response = res.prop;
-    if (response === 'exit') break;
-    const { input, flags } = parseInput(response.split(' '));
-    process.stdout.write('\x1Bc');
-    taskbookCLI(input, flags);
-  }
-};
-
-function parseInput(inputArr) {
-  if (flags[inputArr[0]]) {
-    return { input: inputArr.slice(1), flags: { [inputArr[0]]: true }};
-  }
-  return { input: inputArr, flags: {} };
 }
 
 module.exports = taskbookCLI;

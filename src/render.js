@@ -134,6 +134,16 @@ class Render {
     return note(msgObj);
   }
 
+  display(data) {
+    data.forEach(item => {
+      if (item._isTask && item.isComplete && !this._configuration.displayCompleteTasks) {
+        return;
+      }
+
+      this._displayItemByBoard(item);
+    })
+  }
+
   displayByBoard(data) {
     Object.keys(data).forEach(board => {
       if (this._isBoardComplete(data[board]) && !this._configuration.displayCompleteTasks) {
