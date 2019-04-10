@@ -2,8 +2,6 @@
 'use strict';
 const taskbook = require('./src/taskbook');
 const prompts = require('prompts');
-const { cursor } = require('sisteransi');
-const readline = require('readline');
 
 const flags = {
   help: {
@@ -76,14 +74,20 @@ const flags = {
   },
   smartlist: true,
   sl: true,
+  delay: true,
   clear: {
     type: 'boolean'
   }
 };
 
-const flagKeys = Object.keys(flags);
+function isRenderCommand(flags) {
+  return flags && (flags.timeline || flags.smartlist || flags.sl || Object.keys(flags).length === 0);
+}
 
-function next() {
+const flagKeys = Object.keys(flags);
+const historyCommands = [];
+
+function onTabPress() {
   if (this.select === this.suggestions[this.page].length - 1) {
     let prevInput = this.input;
     this.page = (this.page + 1) % this.suggestions.length;
@@ -102,17 +106,21 @@ const taskbookCLI = async () => {
   let flags = {};
   let input = "";
   process.stdout.write('\x1Bc');
+  taskbook.displayByBoard();
+  taskbook.displayStats();
 
   while (true) {
     if (!isRenderCommand(flags)) {
-      taskbook.displayByBoard();
-      taskbook.displayStats();
+      const arr = historyCommands.filter(c => isRenderCommand(c.flags));
+      const lastRenderFlag = arr.length > 0 ? arr[arr.length - 1].flags : {};
+      executeCommand("", lastRenderFlag);
     }
     const res = await prompts({
       type: 'autocomplete',
       name: 'prop',
-      message: 'Input command',
+      message: '>',
       choices: flagKeys.map(key => ({ title: key })),
+      // Compare the input and the choices by the first "word"
       suggest: (input, choices) => Promise.resolve(
         choices.filter(item => {
           const firstPart = input.split(" ")[0];
@@ -120,34 +128,37 @@ const taskbookCLI = async () => {
         })
       ),
       onRender: function() {
+        // Only set this at the first time for performance
         if (this.firstRender) {
-          this.next = next;
+          this.next = onTabPress;
         }
         this.value = this.input;
       }
     });
-    console.log(res);
     response = res.prop;
     if (response === 'exit') break;
-    input = parseInput(response.split(' ')).input;
-    flags = parseInput(response.split(' ')).flags;
+    const inputArr = response.split(' ').filter(i => i.length > 0);
+    input = parseInput(inputArr).input;
+    flags = parseInput(inputArr).flags;
     process.stdout.write('\x1Bc');
     executeCommand(input, flags);
   }
 };
 
-function isRenderCommand(flags) {
-  return flags && (flags.timeline || flags.smartlist || flags.sl);
-}
-
 function parseInput(inputArr) {
-  if (flags[inputArr[0]]) {
-    return { input: inputArr.slice(1), flags: { [inputArr[0]]: true }};
-  }
-  return { input: inputArr, flags: {} };
+  return flags[inputArr[0]]
+    ? { input: inputArr.slice(1), flags: { [inputArr[0]]: true }}
+    : { input: inputArr, flags: {} };
 }
 
 function executeCommand(input, flags) {
+  historyCommands.push({input, flags});
+
+  if (Object.keys(flags).length === 0) {
+    taskbook.displayByBoard();
+    return taskbook.displayStats();
+  }
+
   if (flags.smartlist || flags.sl) {
     taskbook.displaySmartList();
     return taskbook.displayStats();
@@ -155,6 +166,10 @@ function executeCommand(input, flags) {
 
   if (flags.archive) {
     return taskbook.displayArchive();
+  }
+
+  if (flags.delay) {
+    return taskbook.delayTasks(input);
   }
 
   if (flags.task) {

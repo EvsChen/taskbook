@@ -350,6 +350,20 @@ class Taskbook {
     render.markIncomplete(unchecked);
   }
 
+  delayTasks(ids) {
+    ids = this._validateIDs(ids);
+    const {_data} = this;
+    ids.forEach(id => {
+      if (_data[id]._isTask) {
+        const now = new Date();
+        _data[id]._date = now.toDateString();
+        _data[id]._timestamp = now.getTime();
+      }
+    });
+    this._save(_data);
+    render.successEdit(ids);
+  }
+
   beginTasks(ids) {
     ids = this._validateIDs(ids);
     const {_data} = this;
@@ -405,7 +419,7 @@ class Taskbook {
         }
         return a.priority > 1 ? -1 : 1;
       }
-      return a._date - b._date
+      return a._timestamp - b._timestamp;
     });
     render.display(sortByDate);
   }

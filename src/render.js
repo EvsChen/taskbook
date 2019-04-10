@@ -313,7 +313,7 @@ class Render {
   }
 
   successEdit(id) {
-    const [prefix, suffix] = ['\n', grey(id)];
+    const [prefix, suffix] = ['\n', grey(Array.isArray(id) ? id.join(', ') : id)];
     const message = 'Updated description of item:';
     success({prefix, message, suffix});
   }
