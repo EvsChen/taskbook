@@ -2,6 +2,8 @@
 'use strict';
 const taskbook = require('./src/taskbook');
 const prompts = require('prompts');
+const { cursor } = require('sisteransi');
+const readline = require('readline');
 
 const flags = {
   help: {
@@ -81,6 +83,20 @@ const flags = {
 
 const flagKeys = Object.keys(flags);
 
+function next() {
+  if (this.select === this.suggestions[this.page].length - 1) {
+    let prevInput = this.input;
+    this.page = (this.page + 1) % this.suggestions.length;
+    this.input = this.suggestions[this.page][0].title + ' ';
+    this.cursor += this.input.length - prevInput.length;
+    this.moveSelect(0);
+    this.render();
+  } else {
+    this.moveSelect(this.select + 1);
+    this.render();
+  }
+}
+
 const taskbookCLI = async () => {
   let response = '';
   let flags = {};
@@ -97,10 +113,20 @@ const taskbookCLI = async () => {
       name: 'prop',
       message: 'Input command',
       choices: flagKeys.map(key => ({ title: key })),
-      onRender: () => {
-        console.log(this);
+      suggest: (input, choices) => Promise.resolve(
+        choices.filter(item => {
+          const firstPart = input.split(" ")[0];
+          return item.title.slice(0, firstPart.length).toLowerCase() === firstPart.toLowerCase()
+        })
+      ),
+      onRender: function() {
+        if (this.firstRender) {
+          this.next = next;
+        }
+        this.value = this.input;
       }
     });
+    console.log(res);
     response = res.prop;
     if (response === 'exit') break;
     input = parseInput(response.split(' ')).input;
