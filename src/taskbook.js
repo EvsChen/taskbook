@@ -356,6 +356,7 @@ class Taskbook {
     ids.forEach(id => {
       if (_data[id]._isTask) {
         const now = new Date();
+        _data[id].inProgress = false;
         _data[id]._date = now.toDateString();
         _data[id]._timestamp = now.getTime();
       }
@@ -384,7 +385,7 @@ class Taskbook {
 
   createTask(desc) {
     const {boards, description, id, priority} = this._getOptions(desc);
-    const task = new Task({id, description, boards, priority});
+    const task = new Task({id, description, boards, priority, inProgress: true});
     const {_data} = this;
     _data[id] = task;
     this._save(_data);
@@ -413,13 +414,9 @@ class Taskbook {
     const sortByDate = Object.values(this._data)
       .filter(item => item._isTask && !item.isComplete);
     sortByDate.sort((a, b) => {
-      if (a.priority > 1 || b.priority > 1) {
-        if (a.priority > 1 && b.priority > 1) {
-          return b.priority - a.priority;
-        }
-        return a.priority > 1 ? -1 : 1;
-      }
-      return a._timestamp - b._timestamp;
+      let aScore = a.priority * 100 + (a.inProgress ? 10 : 0) + (a._timestamp < b._timestamp ? 1 : -1);
+      let bScore = b.priority * 100 + (b.inProgress ? 10 : 0) + (b._timestamp < a._timestamp ? 1 : -1);
+      return bScore - aScore;
     });
     render.display(sortByDate);
   }

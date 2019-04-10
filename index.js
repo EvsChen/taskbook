@@ -86,19 +86,54 @@ function isRenderCommand(flags) {
 
 const flagKeys = Object.keys(flags);
 const historyCommands = [];
+const boards = taskbook._getBoards();
+const boardChoices = boards
+  .filter(b => b !== 'My Board')
+  .map(b => ({ title: b.slice(1) }));
+const flagChoices = flagKeys.map(key => ({ title: key }));
 
 function onTabPress() {
   if (this.select === this.suggestions[this.page].length - 1) {
-    let prevInput = this.input;
+    const inputArr = this.input.split(' ');
+    const lastPart = inputArr[inputArr.length - 1];
     this.page = (this.page + 1) % this.suggestions.length;
-    this.input = this.suggestions[this.page][0].title + ' ';
-    this.cursor += this.input.length - prevInput.length;
+    const selected = this.suggestions[this.page][0].title;
+    const enteredPart = lastPart.startsWith('@') ? lastPart.slice(1) : lastPart;
+    // Append the input with the sliced completion
+    this.input += selected.slice(enteredPart.length) + ' ';
+    this.cursor += selected.length - enteredPart.length + 1;
     this.moveSelect(0);
     this.render();
   } else {
     this.moveSelect(this.select + 1);
     this.render();
   }
+}
+
+function suggest(input) {
+  const arr = input.split(' ');
+  if (arr[arr.length - 1].startsWith('@')) {
+    if (!this.chooseBoards) {
+      this.chooseBoards = true;
+      this.choices = boardChoices;
+    }
+    return Promise.resolve(
+      this.choices.filter(({ title }) => {
+        const strAfterAt = arr[arr.length - 1].slice(1);
+        return title.slice(0, strAfterAt.length).toLowerCase() === strAfterAt.toLowerCase()
+      })
+    )
+  }
+  if (this.chooseBoards) {
+    this.chooseBoards = false;
+    this.choices = flagChoices;
+  }
+  return Promise.resolve(
+    this.choices.filter(({ title }) => {
+      const firstPart = arr[0];
+      return title.slice(0, firstPart.length).toLowerCase() === firstPart.toLowerCase()
+    })
+  )
 }
 
 const taskbookCLI = async () => {
@@ -119,14 +154,9 @@ const taskbookCLI = async () => {
       type: 'autocomplete',
       name: 'prop',
       message: '>',
-      choices: flagKeys.map(key => ({ title: key })),
+      choices: flagChoices,
       // Compare the input and the choices by the first "word"
-      suggest: (input, choices) => Promise.resolve(
-        choices.filter(item => {
-          const firstPart = input.split(" ")[0];
-          return item.title.slice(0, firstPart.length).toLowerCase() === firstPart.toLowerCase()
-        })
-      ),
+      suggest,
       onRender: function() {
         // Only set this at the first time for performance
         if (this.firstRender) {
