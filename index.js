@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 const taskbook = require('./src/taskbook');
-const prompts = require('prompts');
+const autocomplete = require('prompts/lib/elements/autocomplete');
 
 const flags = {
   help: {
@@ -137,9 +137,7 @@ function suggest(input) {
 }
 
 const taskbookCLI = async () => {
-  let response = '';
-  let flags = {};
-  let input = "";
+  let flags = {}, input = "", response = '';
   process.stdout.write('\x1Bc');
   taskbook.displayByBoard();
   taskbook.displayStats();
@@ -150,22 +148,20 @@ const taskbookCLI = async () => {
       const lastRenderFlag = arr.length > 0 ? arr[arr.length - 1].flags : {};
       executeCommand("", lastRenderFlag);
     }
-    const res = await prompts({
-      type: 'autocomplete',
-      name: 'prop',
-      message: '>',
-      choices: flagChoices,
-      // Compare the input and the choices by the first "word"
-      suggest,
-      onRender: function() {
-        // Only set this at the first time for performance
-        if (this.firstRender) {
-          this.next = onTabPress;
+
+    response = await new Promise((resolve) => {
+      const p = new autocomplete({
+        message: '>',
+        choices: flagChoices.slice(0),
+        // Compare the input and the choices by the first "word"
+        suggest,
+        onRender: function() {
+          this.value = this.input;
         }
-        this.value = this.input;
-      }
+      });
+      p.next = onTabPress;
+      p.on('submit', v => resolve(v));
     });
-    response = res.prop;
     if (response === 'exit') break;
     const inputArr = response.split(' ').filter(i => i.length > 0);
     input = parseInput(inputArr).input;
