@@ -386,16 +386,19 @@ class Taskbook {
 
   createTask(desc) {
     const {boards, description, id, priority} = this._getOptions(desc);
-    const task = new Task({id, description, boards, priority, inProgress: true});
-    api.create({
+    const {_data} = this;
+    return api.create({
       // Inbox id
       list_id: 243844686,
       title: description,
-    });
-    const {_data} = this;
-    _data[id] = task;
-    this._save(_data);
-    render.successCreate(task);
+    })
+      .then(({ data: wlTask }) => {
+        const task = new Task({id, description, boards, priority, inProgress: true});
+        task.wltask_id = wlTask.id;
+        _data[id] = task;
+        this._save(_data);
+        render.successCreate(task);
+      })
   }
 
   deleteItems(ids) {

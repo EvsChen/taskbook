@@ -146,7 +146,7 @@ const taskbookCLI = async () => {
     if (!isRenderCommand(flags)) {
       const arr = historyCommands.filter(c => isRenderCommand(c.flags));
       const lastRenderFlag = arr.length > 0 ? arr[arr.length - 1].flags : {};
-      executeCommand("", lastRenderFlag);
+      await executeCommand("", lastRenderFlag);
     }
 
     response = await new Promise((resolve) => {
@@ -167,7 +167,7 @@ const taskbookCLI = async () => {
     input = parseInput(inputArr).input;
     flags = parseInput(inputArr).flags;
     process.stdout.write('\x1Bc');
-    executeCommand(input, flags);
+    await executeCommand(input, flags);
   }
 };
 
@@ -177,7 +177,7 @@ function parseInput(inputArr) {
     : { input: inputArr, flags: {} };
 }
 
-function executeCommand(input, flags) {
+async function executeCommand(input, flags) {
   historyCommands.push({input, flags});
 
   if (Object.keys(flags).length === 0) {
