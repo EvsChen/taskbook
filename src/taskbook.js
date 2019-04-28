@@ -5,6 +5,7 @@ const Task = require('./task');
 const Note = require('./note');
 const Storage = require('./storage');
 const render = require('./render');
+const api = require('./api');
 
 class Taskbook {
   constructor() {
@@ -386,6 +387,11 @@ class Taskbook {
   createTask(desc) {
     const {boards, description, id, priority} = this._getOptions(desc);
     const task = new Task({id, description, boards, priority, inProgress: true});
+    api.create({
+      // Inbox id
+      list_id: 243844686,
+      title: description,
+    });
     const {_data} = this;
     _data[id] = task;
     this._save(_data);
