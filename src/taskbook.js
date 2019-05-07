@@ -346,9 +346,24 @@ class Taskbook {
       }
     });
 
-    this._save(_data);
-    render.markComplete(checked);
-    render.markIncomplete(unchecked);
+    const checkWltaskPromise = checked.map(id => {
+      const task = _data[id];
+      if (!task.wltask_id || !task.wltask_revision) return Promise.resolve();
+      return api
+        .update(task.wltask_id, {
+          completed: true,
+          revision: task.wltask_revision
+        })
+        .then(wltask => {
+          _data[id].wltask_revision = wltask.revision;
+        });
+    });
+
+    return Promise.all(checkWltaskPromise).then(() => {
+      this._save(_data);
+      render.markComplete(checked);
+      render.markIncomplete(unchecked);
+    });
   }
 
   delayTasks(ids) {
@@ -395,6 +410,8 @@ class Taskbook {
       .then(({ data: wlTask }) => {
         const task = new Task({id, description, boards, priority, inProgress: true});
         task.wltask_id = wlTask.id;
+        // Revision is set to 1 for new task
+        task.wltask_revision = wlTask.revision;
         _data[id] = task;
         this._save(_data);
         render.successCreate(task);

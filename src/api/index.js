@@ -14,7 +14,10 @@ const client = axios.create({
 
 const create = info => client.post('/tasks', info);
 
+const update = (id, info) => client.patch(`/tasks/${id}`, info);
+
 module.exports = {
   client,
-  create
+  create,
+  update
 };

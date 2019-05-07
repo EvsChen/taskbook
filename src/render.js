@@ -98,32 +98,24 @@ class Render {
     return log(titleObj);
   }
 
-  _displayItemByBoard(item) {
+  _displayItem(item, conf) {
+    const defaultConf = {
+      showBoard: true,
+      showAge: true,
+      showStar: true
+    };
+    const useConf = Object.assign({}, defaultConf, conf);
     const {_isTask, isComplete, inProgress} = item;
+    const boards = item.boards.filter(x => x !== 'My Board');
     const age = this._getAge(item._timestamp);
     const star = this._getStar(item);
 
     const prefix = this._buildPrefix(item);
     const message = this._buildMessage(item);
-    const suffix = (age.length === 0) ? star : `${age} ${star}`;
-
-    const msgObj = {prefix, message, suffix};
-
-    if (_isTask) {
-      return isComplete ? success(msgObj) : inProgress ? wait(msgObj) : pending(msgObj);
-    }
-
-    return note(msgObj);
-  }
-
-  _displayItemByDate(item) {
-    const {_isTask, isComplete, inProgress} = item;
-    const boards = item.boards.filter(x => x !== 'My Board');
-    const star = this._getStar(item);
-
-    const prefix = this._buildPrefix(item);
-    const message = this._buildMessage(item);
-    const suffix = `${this._colorBoards(boards)} ${star}`;
+    let suffix = '';
+    if (useConf.showBoard) suffix += this._colorBoards(boards) + ' ';
+    if (useConf.showAge) suffix += (age.length === 0 ? '' : age) + ' ';
+    if (useConf.showStar) suffix += star;
 
     const msgObj = {prefix, message, suffix};
 
@@ -140,7 +132,7 @@ class Render {
         return;
       }
 
-      this._displayItemByBoard(item);
+      this._displayItem(item);
     })
   }
 
@@ -156,7 +148,7 @@ class Render {
           return;
         }
 
-        this._displayItemByBoard(item);
+        this._displayItem(item, { showBoard: false });
       });
     });
   }
@@ -173,7 +165,7 @@ class Render {
           return;
         }
 
-        this._displayItemByDate(item);
+        this._displayItem(item, { showAge: false });
       });
     });
   }
